@@ -5,14 +5,14 @@ import type { Video } from "../types";
 interface Props {
 	videos: Video[];
 	loading: boolean;
-	error: string | null;
+	columns: 1 | 2;
 	onLoadMore: () => void;
 }
 
 export default function VideoList({
 	videos,
+	columns,
 	loading,
-	error,
 	onLoadMore,
 }: Props) {
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -28,12 +28,11 @@ export default function VideoList({
 		return () => observer.disconnect();
 	}, [onLoadMore]);
 
-	if (error)
-		return <div className="text-center py-10 text-red-400">{error}</div>;
-
 	return (
 		<div>
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+			<div
+				className={`grid grid-cols-1 ${columns === 2 ? "md:grid-cols-2" : ""} gap-4 p-4`}
+			>
 				{videos.map((video) => (
 					<VideoCard key={video.bvid} video={video} />
 				))}

@@ -9,14 +9,12 @@ interface Settings {
 	theme: "light" | "dark";
 }
 
-const defaultSettings: Settings = {
-	cookie: localStorage.getItem("bili-cookie") ?? "",
-	columns: 2,
-	theme: "dark",
-};
-
 export default function App() {
-	const [settings, setSettings] = useState<Settings>(defaultSettings);
+	const [settings, setSettings] = useState<Settings>(() => ({
+		cookie: localStorage.getItem("bili-cookie") ?? "",
+		columns: 2,
+		theme: localStorage.getItem("theme") === "light" ? "light" : "dark",
+	}));
 	const [showSettings, setShowSettings] = useState(false);
 	const { displayed, loading, error, shuffle, loadMore } = useVideos(
 		settings.cookie,
@@ -24,43 +22,54 @@ export default function App() {
 
 	function handleSettingsChange(next: Settings) {
 		localStorage.setItem("bili-cookie", next.cookie);
+		localStorage.setItem("theme", next.theme);
 		setSettings(next);
 	}
 
 	return (
 		<div
-			className={`min-h-screen ${settings.theme === "dark" ? "bg-gray-900" : "bg-gray-100"}`}
+			className={`min-h-screen ${settings.theme === "dark" ? "dark bg-gray-900" : "bg-gray-100"} dark:text-white transition-colors`}
 		>
-			<header className="sticky top-0 z-40 backdrop-blur-md bg-white/10 border-b border-white/10 px-4 py-3 flex items-center justify-between">
-				<h1 className="text-white font-semibold text-base">Watch Later</h1>
+			<header className="sticky top-0 z-40 backdrop-blur-md dark:bg-white/10 bg-black/5 border-b dark:border-white/10 border-gray-300 px-4 py-3 flex items-center justify-between">
+				<h1 className="text-black dark:text-white font-semibold text-base">
+					Watch Later
+				</h1>
 				<div className="flex gap-2">
 					<button
 						onClick={shuffle}
-						className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+						className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
 					>
 						Shuffle
 					</button>
 					<button
 						onClick={() => setShowSettings(true)}
-						className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm transition-colors"
+						className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
 					>
 						Settings
 					</button>
 				</div>
 			</header>
 
-			<main
-				className={`max-w-4xl mx-auto ${settings.columns === 1 ? "[&_.grid]:grid-cols-1" : ""}`}
-			>
+			<main className="max-w-4xl mx-auto">
 				{!settings.cookie ? (
-					<div className="text-center py-20 text-white/50 text-sm">
+					<div className="text-center py-20 dark:text-white/50 text-black/50 text-sm">
 						open settings and paste your cookie to get started
+					</div>
+				) : error ? (
+					<div className="text-center py-20 space-y-3">
+						<p className="text-red-400 text-sm">{error}</p>
+						<button
+							onClick={() => setShowSettings(true)}
+							className="px-4 py-2 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
+						>
+							update cookie
+						</button>
 					</div>
 				) : (
 					<VideoList
 						videos={displayed}
+						columns={settings.columns}
 						loading={loading}
-						error={error}
 						onLoadMore={loadMore}
 					/>
 				)}

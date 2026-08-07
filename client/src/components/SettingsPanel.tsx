@@ -24,7 +24,7 @@ export default function SettingsPanel({ settings, onChange, onClose }: Props) {
 					<div>
 						<label className="text-white/70 text-sm mb-1.5 block">Cookie</label>
 						<textarea
-							className="w-full rounded-lg bg-white/10 border border-white/20 text-white text-xs p-2.5 resize-none focus:outline-none focus:border-white/40"
+							className="w-full rounded-lg bg-white/10 border border-white/20 text-white text-xs p-2.5 resize-none focus:outline-none focus:border-white/40 scrollbar-none"
 							rows={4}
 							placeholder="paste your bilibili cookie here"
 							value={settings.cookie}
