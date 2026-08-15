@@ -2,6 +2,7 @@ import { useState } from "react";
 import VideoList from "./components/VideoList";
 import SettingsPanel from "./components/SettingsPanel";
 import { useVideos } from "./hooks/useVideos";
+import { Shuffle, Settings, RefreshCw } from 'lucide-react';
 
 interface Settings {
 	cookie: string;
@@ -16,7 +17,7 @@ export default function App() {
 		theme: localStorage.getItem("theme") === "light" ? "light" : "dark",
 	}));
 	const [showSettings, setShowSettings] = useState(false);
-	const { displayed, loading, error, shuffle, loadMore } = useVideos(
+	const { displayed, loading, error, shuffle, reload, loadMore } = useVideos(
 		settings.cookie,
 	);
 
@@ -36,16 +37,22 @@ export default function App() {
 				</h1>
 				<div className="flex gap-2">
 					<button
+						onClick={reload}
+						className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
+					>
+						<RefreshCw size="20" />
+					</button>
+					<button
 						onClick={shuffle}
 						className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
 					>
-						Shuffle
+						<Shuffle size="20" />
 					</button>
 					<button
 						onClick={() => setShowSettings(true)}
 						className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
 					>
-						Settings
+						<Settings size="20" />
 					</button>
 				</div>
 			</header>
