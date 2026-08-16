@@ -17,9 +17,8 @@ export default function App() {
 		theme: localStorage.getItem("theme") === "light" ? "light" : "dark",
 	}));
 	const [showSettings, setShowSettings] = useState(false);
-	const { displayed, loading, error, shuffle, reload, loadMore } = useVideos(
-		settings.cookie,
-	);
+	const { displayed, loading, error, shuffle, reload, loadMore, lastSuccessfulFetchedAt } =
+		useVideos(settings.cookie);
 
 	function handleSettingsChange(next: Settings) {
 		localStorage.setItem("bili-cookie", next.cookie);
@@ -32,18 +31,31 @@ export default function App() {
 			className={`min-h-screen ${settings.theme === "dark" ? "dark bg-gray-900" : "bg-gray-100"} dark:text-white transition-colors`}
 		>
 			<header className="sticky top-0 z-40 backdrop-blur-md dark:bg-white/10 bg-black/5 border-b dark:border-white/10 border-gray-300 px-4 py-3 flex items-center justify-between">
-				<h1 className="text-black dark:text-white font-semibold text-base">
-					Watch Later
-				</h1>
+				<div>
+					<h1 className="text-black dark:text-white font-semibold text-base">
+						Watch Later
+					</h1>
+					{lastSuccessfulFetchedAt && (
+						<p className="text-xs dark:text-white/40 text-black/40">
+							Updated: {new Date(lastSuccessfulFetchedAt).toLocaleString()}
+						</p>
+					)}
+				</div>
 				<div className="flex gap-2">
 					<button
-						onClick={reload}
+						onClick={() => {
+							reload();
+							scrollTo({ top: 0, behavior: "smooth" });
+						}}
 						className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
 					>
 						<RefreshCw size="20" />
 					</button>
 					<button
-						onClick={shuffle}
+						onClick={() => {
+							shuffle();
+							scrollTo({ top: 0, behavior: "smooth" });
+						}}
 						className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
 					>
 						<Shuffle size="20" />
