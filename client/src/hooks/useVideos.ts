@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { Video } from "../types";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import type { Video } from '../types';
 
 const PAGE_SIZE = 10;
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Video[] Cache after a successful fetch, keyed by cookie hash.
-const VIDEOS_STORAGE_PREFIX = "video-list:";
+const VIDEOS_STORAGE_PREFIX = 'video-list:';
 
 // Only used for restoring order, not for displaying videos.
-const ORDER_STORAGE_PREFIX = "video-order:";
+const ORDER_STORAGE_PREFIX = 'video-order:';
 
 // The timestamp is stored as a number (milliseconds since epoch) in localStorage, keyed by cookie hash.
-const FETCHED_AT_STORAGE_PREFIX = "video-list-fetched-at:";
+const FETCHED_AT_STORAGE_PREFIX = 'video-list-fetched-at:';
 
 // Explanation: to avoid using stale state when the cookie changes, we tag the state with the cookie it belongs to. This way, if the cookie changes, we can ignore the old state and use the new one.
 type OwnedState<T> = {
@@ -39,7 +39,7 @@ function hashString(value: string): number {
 }
 
 function getCookieKey(cookie: string): string {
-  if (!cookie) return "";
+  if (!cookie) return '';
 
   return hashString(cookie).toString(36);
 }
@@ -60,7 +60,7 @@ function readVideos(cookieKey: string): Video[] | null {
 
     if (
       !parsed.every(
-        (item) => item !== null && typeof item === "object" && "bvid" in item,
+        item => item !== null && typeof item === 'object' && 'bvid' in item
       )
     ) {
       return null;
@@ -68,7 +68,7 @@ function readVideos(cookieKey: string): Video[] | null {
 
     return parsed as Video[];
   } catch (error) {
-    console.error("Failed to read cached video list from localStorage:", error);
+    console.error('Failed to read cached video list from localStorage:', error);
 
     return null;
   }
@@ -80,10 +80,10 @@ function saveVideos(cookieKey: string, videos: Video[]): void {
   try {
     localStorage.setItem(
       VIDEOS_STORAGE_PREFIX + cookieKey,
-      JSON.stringify(videos),
+      JSON.stringify(videos)
     );
   } catch (error) {
-    console.error("Failed to save video list to localStorage:", error);
+    console.error('Failed to save video list to localStorage:', error);
   }
 }
 
@@ -101,13 +101,13 @@ function readOrder(cookieKey: string): string[] | null {
       return null;
     }
 
-    if (!parsed.every((item) => typeof item === "string")) {
+    if (!parsed.every(item => typeof item === 'string')) {
       return null;
     }
 
     return parsed;
   } catch (error) {
-    console.error("Failed to read video order from localStorage:", error);
+    console.error('Failed to read video order from localStorage:', error);
 
     return null;
   }
@@ -119,10 +119,10 @@ function saveOrder(cookieKey: string, orderIds: string[]): void {
   try {
     localStorage.setItem(
       ORDER_STORAGE_PREFIX + cookieKey,
-      JSON.stringify(orderIds),
+      JSON.stringify(orderIds)
     );
   } catch (error) {
-    console.error("Failed to save video order to localStorage:", error);
+    console.error('Failed to save video order to localStorage:', error);
   }
 }
 
@@ -143,8 +143,8 @@ function readSuccessfulFetchedAt(cookieKey: string): number | null {
     return timestamp;
   } catch (error) {
     console.error(
-      "Failed to read last successful fetch time from localStorage:",
-      error,
+      'Failed to read last successful fetch time from localStorage:',
+      error
     );
 
     return null;
@@ -157,12 +157,12 @@ function saveSuccessfulFetchedAt(cookieKey: string, timestamp: number): void {
   try {
     localStorage.setItem(
       FETCHED_AT_STORAGE_PREFIX + cookieKey,
-      String(timestamp),
+      String(timestamp)
     );
   } catch (error) {
     console.error(
-      "Failed to save last successful fetch time to localStorage:",
-      error,
+      'Failed to save last successful fetch time to localStorage:',
+      error
     );
   }
 }
@@ -184,9 +184,9 @@ function pseudoRandomOrder(videos: Video[], seed: string): Video[] {
 function restoreOrder(
   videos: Video[],
   orderIds: string[],
-  seed: string,
+  seed: string
 ): Video[] {
-  const videoMap = new Map(videos.map((video) => [video.bvid, video]));
+  const videoMap = new Map(videos.map(video => [video.bvid, video]));
 
   const result: Video[] = [];
 
@@ -206,7 +206,7 @@ function restoreOrder(
 }
 
 function randomOrderIds(videos: Video[]): string[] {
-  const ids = videos.map((video) => video.bvid);
+  const ids = videos.map(video => video.bvid);
 
   for (let i = ids.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -219,9 +219,9 @@ function randomOrderIds(videos: Video[]): string[] {
 
 // fetchFreshVideos only fetches and persists, then passes these three values to React state.
 async function fetchVideos(cookie: string): Promise<Video[]> {
-  const res = await fetch("/api/videos", {
+  const res = await fetch('/api/videos', {
     headers: {
-      "x-bili-cookie": cookie,
+      'x-bili-cookie': cookie,
     },
   });
 
@@ -230,7 +230,7 @@ async function fetchVideos(cookie: string): Promise<Video[]> {
   try {
     data = await res.json();
   } catch (error) {
-    console.error("Failed to parse videos response:", error);
+    console.error('Failed to parse videos response:', error);
 
     throw new Error(`Server error: ${res.status}`, {
       cause: error,
@@ -242,9 +242,9 @@ async function fetchVideos(cookie: string): Promise<Video[]> {
 
     if (
       data &&
-      typeof data === "object" &&
-      "message" in data &&
-      typeof data.message === "string"
+      typeof data === 'object' &&
+      'message' in data &&
+      typeof data.message === 'string'
     ) {
       message = data.message;
     }
@@ -253,7 +253,7 @@ async function fetchVideos(cookie: string): Promise<Video[]> {
   }
 
   if (!Array.isArray(data)) {
-    throw new Error("Server returned invalid video data format");
+    throw new Error('Server returned invalid video data format');
   }
 
   return data as Video[];
@@ -268,7 +268,7 @@ export function useVideos(cookie: string) {
 
   const storedSuccessfulFetchedAt = useMemo(
     () => readSuccessfulFetchedAt(cookieKey),
-    [cookieKey],
+    [cookieKey]
   );
 
   const [pageState, setPageState] = useState<OwnedState<number>>(() => ({
@@ -277,18 +277,18 @@ export function useVideos(cookie: string) {
   }));
 
   const [videosState, setVideosState] = useState<OwnedState<Video[]> | null>(
-    null,
+    null
   );
 
   const [orderState, setOrderState] = useState<OwnedState<string[]> | null>(
-    null,
+    null
   );
 
   const [successfulFetchedAtState, setSuccessfulFetchedAtState] =
     useState<OwnedState<number> | null>(null);
 
   const { error, isFetching, refetch } = useQuery({
-    queryKey: ["videos", cookieKey],
+    queryKey: ['videos', cookieKey],
     queryFn: () => fetchVideos(cookie),
     // Request only comes from:
     // 1. User manually reload;
@@ -301,7 +301,7 @@ export function useVideos(cookie: string) {
       videosState?.owner === cookieKey
         ? videosState.value
         : (storedVideos ?? []),
-    [videosState, cookieKey, storedVideos],
+    [videosState, cookieKey, storedVideos]
   );
 
   const activeOrderIds =
@@ -319,7 +319,7 @@ export function useVideos(cookie: string) {
       return null;
     }
 
-    return pseudoRandomOrder(videos, cookieKey).map((video) => video.bvid);
+    return pseudoRandomOrder(videos, cookieKey).map(video => video.bvid);
   }, [cookieKey, videos, activeOrderIds]);
 
   useEffect(() => {
@@ -393,7 +393,7 @@ export function useVideos(cookie: string) {
           fetchedAt,
         };
       } catch (error) {
-        console.error("Failed to refresh videos:", error);
+        console.error('Failed to refresh videos:', error);
 
         return null;
       }
@@ -426,7 +426,7 @@ export function useVideos(cookie: string) {
   }, [cookieKey, fetchFreshVideos, applyFreshVideos]);
 
   const bootstrapRequestsRef = useRef<Map<string, Promise<FreshVideos | null>>>(
-    new Map(),
+    new Map()
   );
 
   useEffect(() => {
@@ -466,7 +466,7 @@ export function useVideos(cookie: string) {
 
     let ignore = false;
 
-    void request.then((fresh) => {
+    void request.then(fresh => {
       if (ignore || !fresh) {
         return;
       }
@@ -496,7 +496,7 @@ export function useVideos(cookie: string) {
       return;
     }
 
-    setPageState((prev) => {
+    setPageState(prev => {
       const currentPage = prev.owner === cookieKey ? prev.value : 0;
 
       return {
