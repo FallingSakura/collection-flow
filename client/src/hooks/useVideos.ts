@@ -15,7 +15,6 @@ const ORDER_STORAGE_PREFIX = 'video-order:';
 // The timestamp is stored as a number (milliseconds since epoch) in localStorage, keyed by cookie hash.
 const FETCHED_AT_STORAGE_PREFIX = 'video-list-fetched-at:';
 
-// Explanation: to avoid using stale state when the cookie changes, we tag the state with the cookie it belongs to. This way, if the cookie changes, we can ignore the old state and use the new one.
 type OwnedState<T> = {
   owner: string;
   value: T;

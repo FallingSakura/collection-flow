@@ -2,7 +2,8 @@ import { useState } from 'react';
 import VideoList from './components/VideoList';
 import SettingsPanel from './components/SettingsPanel';
 import { useVideos } from './hooks/useVideos';
-import { Shuffle, Settings, RefreshCw } from 'lucide-react';
+import Header from './components/Header';
+import { ArrowUp } from 'lucide-react';
 
 interface Settings {
   cookie: string;
@@ -37,45 +38,12 @@ export default function App() {
     <div
       className={`min-h-screen ${settings.theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'} dark:text-white transition-colors`}
     >
-      <header className="sticky top-0 z-40 backdrop-blur-md dark:bg-white/10 bg-black/5 border-b dark:border-white/10 border-gray-300 px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="text-black dark:text-white font-semibold text-base">
-            Watch Later
-          </h1>
-          {lastSuccessfulFetchedAt && (
-            <p className="text-xs dark:text-white/40 text-black/40">
-              Updated: {new Date(lastSuccessfulFetchedAt).toLocaleString()}
-            </p>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              reload();
-              scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
-          >
-            <RefreshCw size="20" />
-          </button>
-          <button
-            onClick={() => {
-              shuffle();
-              scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
-          >
-            <Shuffle size="20" />
-          </button>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
-          >
-            <Settings size="20" />
-          </button>
-        </div>
-      </header>
-
+      <Header
+        reload={reload}
+        shuffle={shuffle}
+        lastSuccessfulFetchedAt={lastSuccessfulFetchedAt}
+        setShowSettings={setShowSettings}
+      />
       <main className="max-w-4xl mx-auto">
         {!settings.cookie ? (
           <div className="text-center py-20 dark:text-white/50 text-black/50 text-sm">
@@ -99,6 +67,12 @@ export default function App() {
             onLoadMore={loadMore}
           />
         )}
+        <div className="fixed rounded-full bottom-8 right-8 p-2 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black">
+          <ArrowUp
+            size={25}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          />
+        </div>
       </main>
 
       {showSettings && (
