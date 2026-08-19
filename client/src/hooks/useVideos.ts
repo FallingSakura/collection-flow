@@ -525,6 +525,90 @@ export function useVideos(cookie: string) {
     });
   }
 
+  const pendingDeleteRef = useRef<{ cookieKey: string; videos: Video[] }>({
+    cookieKey: '',
+    videos: [],
+  });
+
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const flushPendingDeletes = useCallback(async () => {
+    const batch = pendingDeleteRef.current;
+
+    pendingDeleteRef.current = { cookieKey: '', videos: [] };
+    deleteTimerRef.current = null;
+
+    if (batch.videos.length === 0) return;
+
+    try {
+      const res = await fetch('/api/videos/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-bili-cookie': cookie,
+        },
+        body: JSON.stringify({ aids: batch.videos.map(v => v.aid) }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || '删除失败');
+      }
+    } catch (err) {
+      console.error('Failed to delete videos:', err);
+
+      setDeleteError(
+        err instanceof Error ? err.message : '删除失败，视频已恢复'
+      );
+
+      setVideosState(prev => {
+        const base =
+          prev?.owner === batch.cookieKey
+            ? prev.value
+            : (readVideos(batch.cookieKey) ?? []);
+
+        const restored = [...base, ...batch.videos];
+
+        saveVideos(batch.cookieKey, restored);
+
+        return { owner: batch.cookieKey, value: restored };
+      });
+    }
+  }, [cookie]);
+
+  function deleteVideo(video: Video) {
+    if (!cookieKey) return;
+
+    const next = videos.filter(v => v.aid !== video.aid);
+
+    saveVideos(cookieKey, next);
+
+    setVideosState({ owner: cookieKey, value: next });
+
+    if (pendingDeleteRef.current.cookieKey !== cookieKey) {
+      if (pendingDeleteRef.current.videos.length > 0) {
+        void flushPendingDeletes();
+      }
+
+      pendingDeleteRef.current = { cookieKey, videos: [video] };
+    } else {
+      pendingDeleteRef.current.videos.push(video);
+    }
+
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+
+    deleteTimerRef.current = setTimeout(() => {
+      void flushPendingDeletes();
+    }, 800);
+  }
+
+  const clearDeleteError = useCallback(() => {
+    setDeleteError(null);
+  }, []);
+
   const displayed = orderedVideos.slice(0, (page + 1) * PAGE_SIZE);
 
   return {
@@ -534,6 +618,9 @@ export function useVideos(cookie: string) {
     shuffle,
     reload,
     loadMore,
+    deleteVideo,
+    deleteError,
+    clearDeleteError,
     lastSuccessfulFetchedAt,
   };
 }

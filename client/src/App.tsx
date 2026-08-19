@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import VideoList from './components/VideoList';
 import SettingsPanel from './components/SettingsPanel';
 import { useVideos } from './hooks/useVideos';
@@ -25,6 +25,9 @@ export default function App() {
     shuffle,
     reload,
     loadMore,
+    deleteVideo,
+    deleteError,
+    clearDeleteError,
     lastSuccessfulFetchedAt,
   } = useVideos(settings.cookie);
 
@@ -32,6 +35,32 @@ export default function App() {
     localStorage.setItem('bili-cookie', next.cookie);
     localStorage.setItem('theme', next.theme);
     setSettings(next);
+  }
+
+  const [toastVisible, setToastVisible] = useState(false);
+
+  // Fade the toast out on its own after 5s of no interaction; the actual
+  // error is only cleared once the fade-out transition has finished, so it
+  // can't pop back in mid-fade.
+  useEffect(() => {
+    if (!deleteError) return;
+
+    const showTimer = setTimeout(() => setToastVisible(true), 0);
+
+    const hideTimer = setTimeout(() => {
+      setToastVisible(false);
+      setTimeout(clearDeleteError, 300);
+    }, 5000);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [deleteError, clearDeleteError]);
+
+  function dismissDeleteError() {
+    setToastVisible(false);
+    setTimeout(clearDeleteError, 300);
   }
 
   return (
@@ -65,7 +94,24 @@ export default function App() {
             columns={settings.columns}
             loading={loading}
             onLoadMore={loadMore}
+            onDelete={deleteVideo}
           />
+        )}
+
+        {deleteError && (
+          <div
+            className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg bg-red-500/90 text-white text-sm px-4 py-2.5 shadow-lg transition-opacity duration-300 ${
+              toastVisible ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            {deleteError}
+            <button
+              onClick={dismissDeleteError}
+              className="text-white/80 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
         )}
         <div className="fixed rounded-full bottom-8 right-8 p-2 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black">
           <ArrowUp

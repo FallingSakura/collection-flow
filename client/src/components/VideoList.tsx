@@ -7,6 +7,7 @@ interface Props {
   loading: boolean;
   columns: 1 | 2;
   onLoadMore: () => void;
+  onDelete: (video: Video) => void;
 }
 
 export default function VideoList({
@@ -14,6 +15,7 @@ export default function VideoList({
   columns,
   loading,
   onLoadMore,
+  onDelete,
 }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -31,10 +33,14 @@ export default function VideoList({
   return (
     <div>
       <div
-        className={`grid grid-cols-1 ${columns === 2 ? 'md:grid-cols-2' : ''} gap-4 p-4`}
+        className={`grid grid-cols-1 items-start ${columns === 2 ? 'md:grid-cols-2' : ''} gap-4 p-4`}
       >
         {videos.map(video => (
-          <VideoCard key={video.bvid} video={video} />
+          <VideoCard
+            key={video.bvid}
+            video={video}
+            onDelete={() => onDelete(video)}
+          />
         ))}
       </div>
       <div ref={bottomRef} className="py-6 text-center text-sm text-white/40">

@@ -1,4 +1,5 @@
 export interface Video {
+  aid: number;
   title: string;
   bvid: string;
   cover: string;
