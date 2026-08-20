@@ -1,4 +1,5 @@
 import express, { type Request, type Response } from 'express';
+import cors from 'cors';
 
 interface BiliOwner {
   name: string;
@@ -32,7 +33,12 @@ interface Video {
 }
 
 const app = express();
-app.use(express.static('public'));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 function getCookie(req: Request): string | undefined {
@@ -149,6 +155,12 @@ app.get('/api/cover', async (req: Request, res: Response) => {
   return res.send(Buffer.from(buffer));
 });
 
-app.listen(3000, () => {
-  console.log('running on http://localhost:3000');
+app.get('/', (req: Request, res: Response) => {
+  return res.send('Collection Flow API Server is running.');
+});
+
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+  console.log(`running on http://localhost:${port}`);
 });
