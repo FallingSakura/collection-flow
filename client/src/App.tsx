@@ -22,6 +22,7 @@ export default function App() {
     displayed,
     loading,
     error,
+    errorEpoch,
     shuffle,
     reload,
     loadMore,
@@ -78,7 +79,8 @@ export default function App() {
           <div className="text-center py-20 dark:text-white/50 text-black/50 text-sm">
             open settings and paste your cookie to get started
           </div>
-        ) : error ? (
+        ) : error && displayed.length === 0 ? (
+          // No cached data to fall back on, so the error gets the full page.
           <div className="text-center py-20 space-y-3">
             <p className="text-red-400 text-sm">{error}</p>
             <button
@@ -89,13 +91,33 @@ export default function App() {
             </button>
           </div>
         ) : (
-          <VideoList
-            videos={displayed}
-            columns={settings.columns}
-            loading={loading}
-            onLoadMore={loadMore}
-            onDelete={deleteVideo}
-          />
+          <>
+            {error && (
+              // A refresh failed but cached videos are still on screen;
+              // show the error as a banner instead of swapping the list out.
+              // key={errorEpoch} remounts the banner on every new failure so
+              // the shake animation replays even for a repeated message.
+              <div
+                key={errorEpoch}
+                className="animate-shake mt-4 flex items-center justify-between gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400"
+              >
+                <span>{error}</span>
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="shrink-0 underline underline-offset-2 hover:text-red-300 transition-colors"
+                >
+                  update cookie
+                </button>
+              </div>
+            )}
+            <VideoList
+              videos={displayed}
+              columns={settings.columns}
+              loading={loading}
+              onLoadMore={loadMore}
+              onDelete={deleteVideo}
+            />
+          </>
         )}
 
         {deleteError && (
