@@ -54,8 +54,8 @@ export default function VideoCard({ video, onDelete }: Props) {
       rel="noopener noreferrer"
       className="block"
     >
-      <div className="rounded-xl overflow-hidden dark:bg-white/10 bg-black/5 dark:border-none border-gray-300 border backdrop-blur-md hover:bg-white/20 transition-colors">
-        <div className="relative">
+      <div className="rounded-xl overflow-hidden backdrop-blur-md hover:bg-white/20 transition-colors">
+        <div className="relative rounded-2xl overflow-hidden">
           <img
             src={`/api/cover?url=${encodeURIComponent(video.cover)}`}
             alt={video.title}
@@ -66,10 +66,10 @@ export default function VideoCard({ video, onDelete }: Props) {
           </span>
         </div>
         <div className="p-3 relative">
-          <p className="text-sm font-medium text-black dark:text-white line-clamp-2 leading-snug pr-6">
+          <p className="text-base font-medium text-black dark:text-white line-clamp-2 leading-snug pr-6">
             {video.title}
           </p>
-          <p className="text-xs text-black dark:text-white/50 mt-1">
+          <p className="text-sm text-gray-500 dark:text-white/50 mt-1">
             {video.author}
           </p>
 
@@ -87,7 +87,7 @@ export default function VideoCard({ video, onDelete }: Props) {
             {menuOpen && (
               <div
                 onClick={stop}
-                className="absolute bottom-full right-0 mb-1 w-28 p-1 rounded-xl dark:bg-black/80 bg-white/90 backdrop-blur-md border dark:border-white/10 border-gray-200 shadow-lg overflow-hidden z-20"
+                className="absolute bottom-full right-0 mb-1 w-32 p-1 rounded-xl dark:bg-black/80 bg-white/90 backdrop-blur-md border dark:border-white/10 border-gray-200 shadow-lg overflow-hidden z-20"
               >
                 <button
                   onClick={e => {
@@ -95,7 +95,7 @@ export default function VideoCard({ video, onDelete }: Props) {
                     setMenuOpen(false);
                     setConfirmOpen(true);
                   }}
-                  className="w-full rounded-lg flex items-center gap-1.5 px-3 py-2 text-xs text-red-500 hover:bg-red-500/10 transition-colors"
+                  className="w-full rounded-lg flex items-center gap-1.5 px-3.5 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 size={14} />
                   删除
