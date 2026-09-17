@@ -1,5 +1,9 @@
 import 'dotenv/config';
-import express, { type Request, type Response } from 'express';
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from 'express';
 import cors from 'cors';
 
 interface BiliOwner {
@@ -37,6 +41,43 @@ const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173';
 
+function originOf(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+
+  try {
+    return new URL(value).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+// The configured frontend origin is always allowed; localhost on any port is
+// allowed too, because Vite bumps the port (5174, ...) when 5173 is taken.
+// Any other origin is rejected, so a third-party site cannot embed or drive
+// this API from its own pages.
+function isAllowedOrigin(value: string | undefined): boolean {
+  if (!value) return false;
+  if (value === FRONTEND_URL) return true;
+
+  try {
+    const { hostname } = new URL(value);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+// Origin check for every /api request. Browsers omit the Origin header on
+// same-origin GET requests but always send Referer, so accepting either is
+// enough for the real frontend while non-browser clients (which send
+// neither) are rejected.
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  if (isAllowedOrigin(req.headers.origin) || isAllowedOrigin(originOf(req.headers.referer))) {
+    return next();
+  }
+
+  return res.status(403).json({ error: 'Forbidden: unknown origin' });
+});
 app.use(
   cors({
     origin: FRONTEND_URL,
