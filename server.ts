@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 
@@ -33,9 +34,12 @@ interface Video {
 }
 
 const app = express();
+
+const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: FRONTEND_URL,
     credentials: true,
   })
 );
@@ -139,6 +143,23 @@ app.post('/api/videos/delete', async (req: Request, res: Response) => {
 app.get('/api/cover', async (req: Request, res: Response) => {
   const url = req.query.url as string | undefined;
   if (!url) return res.status(400).json({ error: 'missing url' });
+
+  // Whitelist to bilibili's CDN. Without this check the endpoint is an
+  // open proxy that fetches whatever URL an attacker points it at.
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return res.status(400).json({ error: 'invalid url' });
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return res.status(400).json({ error: 'only http(s) urls are allowed' });
+  }
+  if (!parsed.hostname.endsWith('.hdslb.com')) {
+    return res
+      .status(400)
+      .json({ error: 'only bilibili CDN (hdslb.com) urls are allowed' });
+  }
 
   const response = await fetch(url, {
     headers: {
