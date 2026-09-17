@@ -2,6 +2,10 @@
   "name": "bilibili-watchlater",
   "version": "1.0.0",
   "main": "server.ts",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
     "start": "tsx server.ts",
     "dev": "tsx watch server.ts",
