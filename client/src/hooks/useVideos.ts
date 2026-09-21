@@ -357,6 +357,7 @@ export function useVideos(cookie: string) {
     queryKey: ['videos', cookieKey],
     queryFn: () => fetchVideos(cookie),
     enabled: false,
+    retry: false,
   });
 
   // Held here rather than read from useQuery, which clears its error the
