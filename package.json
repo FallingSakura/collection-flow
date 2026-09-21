@@ -2,7 +2,7 @@
   "name": "bilibili-watchlater",
   "version": "1.0.0",
   "main": "server.ts",
-  "packageManager": "pnpm@11.22.0",
+  "packageManager": "pnpm@12.5.1",
   "engines": {
     "node": ">=22.13.0"
   },
