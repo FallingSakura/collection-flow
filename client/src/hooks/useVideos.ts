@@ -782,7 +782,7 @@ export function useVideos(cookie: string) {
 
     deleteTimerRef.current = setTimeout(() => {
       void flushPendingDeletes();
-    }, 800);
+    }, 2000);
   }
 
   const clearDeleteError = useCallback(() => {
