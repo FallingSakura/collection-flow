@@ -64,6 +64,11 @@ export function useVideos(cookie: string) {
   // Read during render: the reads are synchronous and the memos re-run only
   // when the cookie changes, so mirroring them into state would just add a
   // second copy to keep in sync.
+  //
+  // They hold the cache as it stood when this cookie was selected, not a live
+  // view of it — a fetch or a delete that writes to localStorage afterwards
+  // leaves them behind. So they are the opening value and the fallback, while
+  // the state below is what stays current.
   const storedVideos = useMemo(() => readVideos(cookieKey), [cookieKey]);
 
   const storedOrderIds = useMemo(() => readOrder(cookieKey), [cookieKey]);
