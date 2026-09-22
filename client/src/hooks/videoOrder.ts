@@ -1,5 +1,4 @@
 import type { Video } from '../types';
-import { hashString } from './videoCache';
 
 /**
  * Two orderings exist, and the difference between them is the point:
@@ -12,18 +11,25 @@ import { hashString } from './videoCache';
  * Either way the result is persisted: an order recomputed on each load would
  * move cards around between visits.
  */
-export function pseudoRandomOrder(videos: Video[], seed: string): Video[] {
-  return [...videos].sort((a, b) => {
-    const hashA = hashString(`${seed}:${a.bvid}`);
+export function pseudoRandomOrder(
+  videos: Video[],
+  seed: string,
+  hash: (value: string) => number
+): Video[] {
+  const decorated = videos.map(video => ({
+    video,
+    hash: hash(`${seed}:${video.bvid}`),
+  }));
 
-    const hashB = hashString(`${seed}:${b.bvid}`);
-
-    if (hashA !== hashB) {
-      return hashA - hashB;
+  decorated.sort((a, b) => {
+    if (a.hash !== b.hash) {
+      return a.hash - b.hash;
     }
 
-    return a.bvid.localeCompare(b.bvid);
+    return a.video.bvid.localeCompare(b.video.bvid);
   });
+
+  return decorated.map(item => item.video);
 }
 
 // Applies the saved order, then appends whatever it does not mention — videos
@@ -32,7 +38,8 @@ export function pseudoRandomOrder(videos: Video[], seed: string): Video[] {
 export function restoreOrder(
   videos: Video[],
   orderIds: string[],
-  seed: string
+  seed: string,
+  hash: (value: string) => number
 ): Video[] {
   const videoMap = new Map(videos.map(video => [video.bvid, video]));
 
@@ -46,7 +53,11 @@ export function restoreOrder(
     result.push(video);
     videoMap.delete(id);
   }
-  const newVideos = pseudoRandomOrder([...videoMap.values()], `${seed}:new`);
+  const newVideos = pseudoRandomOrder(
+    [...videoMap.values()],
+    `${seed}:new`,
+    hash
+  );
 
   result.push(...newVideos);
 

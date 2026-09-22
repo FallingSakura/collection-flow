@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Video } from '../types';
 import {
+  hashString,
   getCookieKey,
   readSuccessfulFetchedAt,
   saveSuccessfulFetchedAt,
@@ -182,7 +183,9 @@ export function useVideos(cookie: string) {
       return null;
     }
 
-    return pseudoRandomOrder(videos, cookieKey).map(video => video.bvid);
+    return pseudoRandomOrder(videos, cookieKey, hashString).map(
+      video => video.bvid
+    );
   }, [cookieKey, videos, activeOrderIds]);
 
   useEffect(() => {
@@ -200,7 +203,7 @@ export function useVideos(cookie: string) {
 
     const effectiveOrderIds = activeOrderIds ?? initialPseudoOrderIds ?? [];
 
-    return restoreOrder(videos, effectiveOrderIds, cookieKey);
+    return restoreOrder(videos, effectiveOrderIds, cookieKey, hashString);
   }, [cookieKey, videos, activeOrderIds, initialPseudoOrderIds]);
 
   const applyFreshVideos = useCallback((owner: string, fresh: FreshVideos) => {
