@@ -72,7 +72,10 @@ function isAllowedOrigin(value: string | undefined): boolean {
 // enough for the real frontend while non-browser clients (which send
 // neither) are rejected.
 app.use('/api', (req: Request, res: Response, next: NextFunction) => {
-  if (isAllowedOrigin(req.headers.origin) || isAllowedOrigin(originOf(req.headers.referer))) {
+  if (
+    isAllowedOrigin(req.headers.origin) ||
+    isAllowedOrigin(originOf(req.headers.referer))
+  ) {
     return next();
   }
 
