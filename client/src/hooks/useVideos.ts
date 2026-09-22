@@ -10,9 +10,13 @@ import {
   saveVideos,
   readOrder,
   saveOrder,
-} from './videoCache';
+} from '../lib/videoCache';
 
-import { pseudoRandomOrder, restoreOrder, randomOrderIds } from './videoOrder';
+import {
+  pseudoRandomOrder,
+  restoreOrder,
+  randomOrderIds,
+} from '../lib/videoOrder';
 
 /**
  * Per-cookie client-side cache for the "watch later" list.
