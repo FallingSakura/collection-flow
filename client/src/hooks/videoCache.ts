@@ -10,6 +10,7 @@ const VIDEOS_STORAGE_PREFIX = 'video-list:';
 
 // Only used for restoring order, not for displaying videos.
 const ORDER_STORAGE_PREFIX = 'video-order:';
+
 // FNV-1a, used to turn the cookie into a short opaque key. It is not a
 // cryptographic hash and offers no collision resistance worth relying on —
 // the point is only to avoid storing the credential itself and to keep the
