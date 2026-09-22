@@ -468,19 +468,34 @@ export function useVideos(cookie: string) {
       );
 
       // Counterpart to the optimistic update: the server refused, so the
-      // videos are still there. They go back under the batch's own cookieKey,
-      // not the current one.
+      // videos go back into the batch's own cache bucket. This write is
+      // unconditional — the bucket holds the optimistic list, and a reload
+      // would read it back.
+      const restored = [
+        ...(readVideos(batch.cookieKey) ?? []),
+        ...batch.videos,
+      ];
+
+      saveVideos(batch.cookieKey, restored);
+
+      // The state slot is shared by every cookie, so writing
+      // { owner: batch.cookieKey } evicts whatever occupies it. Harmless
+      // while the occupant is not the cookie on screen, but if a fetch for
+      // the selected cookie landed after this batch was queued, the swap
+      // would drop its live list — the render would then fall back to
+      // storedVideos, a snapshot from the moment that cookie was selected
+      // and stale ever since. Skip only that case: this batch's cookie is
+      // already repaired on disk, and the memo re-reads it on the next
+      // switch.
       setVideosState(prev => {
-        const base =
-          prev?.owner === batch.cookieKey
-            ? prev.value
-            : (readVideos(batch.cookieKey) ?? []);
+        const evictsSelected =
+          prev !== null &&
+          prev.owner !== batch.cookieKey &&
+          prev.owner === currentCookieKeyRef.current;
 
-        const restored = [...base, ...batch.videos];
-
-        saveVideos(batch.cookieKey, restored);
-
-        return { owner: batch.cookieKey, value: restored };
+        return evictsSelected
+          ? prev
+          : { owner: batch.cookieKey, value: restored };
       });
     }
   }, []);
