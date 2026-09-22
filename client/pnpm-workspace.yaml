@@ -1,0 +1,6 @@
+# client is its own pnpm project — it has its own lockfile and is not a member
+# of the workspace at the repo root. Without this file pnpm walks up, finds the
+# root pnpm-workspace.yaml, and installs the root project instead: the client's
+# dependencies are skipped without any error.
+allowBuilds:
+  esbuild: true
