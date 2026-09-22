@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Video } from '../types';
+import { fetchVideos, deleteVideos } from '../lib/videoApi';
 import {
   hashString,
   getCookieKey,
@@ -56,54 +57,6 @@ type FreshVideos = {
   orderIds: string[];
   fetchedAt: number;
 };
-
-/**
- * Deliberately reports the server's own error text rather than the status
- * code: a failed bilibili call still returns HTTP 400 with a body like
- * {"error":"账号未登录"}, and that message is what tells the user whether their
- * cookie expired or something else went wrong.
- */
-async function fetchVideos(cookie: string): Promise<Video[]> {
-  const res = await fetch('/api/videos', {
-    headers: {
-      'x-bili-cookie': cookie,
-    },
-  });
-
-  let data: unknown;
-
-  try {
-    data = await res.json();
-  } catch (error) {
-    console.error('Failed to parse videos response:', error);
-
-    throw new Error(`Server error: ${res.status}`, {
-      cause: error,
-    });
-  }
-
-  if (!res.ok) {
-    let message = `Server error: ${res.status}`;
-
-    if (
-      data &&
-      typeof data === 'object' &&
-      'error' in data &&
-      typeof data.error === 'string' &&
-      data.error
-    ) {
-      message = data.error;
-    }
-
-    throw new Error(message);
-  }
-
-  if (!Array.isArray(data)) {
-    throw new Error('Server returned invalid video data format');
-  }
-
-  return data as Video[];
-}
 
 export function useVideos(cookie: string) {
   const cookieKey = useMemo(() => getCookieKey(cookie), [cookie]);
@@ -503,20 +456,10 @@ export function useVideos(cookie: string) {
     if (batch.videos.length === 0) return;
 
     try {
-      const res = await fetch('/api/videos/delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-bili-cookie': batch.cookie,
-        },
-        body: JSON.stringify({ aids: batch.videos.map(v => v.aid) }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || '删除失败');
-      }
+      await deleteVideos(
+        batch.cookie,
+        batch.videos.map(v => v.aid)
+      );
     } catch (err) {
       console.error('Failed to delete videos:', err);
 
