@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            client/pnpm-lock.yaml
+
+      # The repo holds two pnpm projects: the root (server) and client/, which
+      # has a lockfile of its own, so both need installing.
+      # HUSKY=0 skips the prepare script: git hooks are a local convenience.
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -C client install --frozen-lockfile
+        env:
+          HUSKY: 0
+
+      - name: Check formatting
+        run: |
+          pnpm run format:check
+          pnpm -C client run format:check
+
+      - name: Typecheck
+        run: |
+          pnpm run typecheck
+          pnpm -C client run typecheck
+
+      - name: Lint
+        run: pnpm -C client run lint
+
+      - name: Build
+        run: pnpm -C client run build

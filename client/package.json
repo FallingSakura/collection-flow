@@ -10,9 +10,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,json,css,md}\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
