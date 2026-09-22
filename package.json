@@ -11,6 +11,8 @@
     "dev": "tsx watch server.ts",
     "typecheck": "tsc --noEmit",
     "format": "pnpm exec prettier --write server.ts",
+    "format:check": "pnpm exec prettier --check server.ts",
+    "prepare": "husky",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -27,8 +29,14 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
     "prettier": "^3.9.6",
     "tsx": "^4.23.11",
     "typescript": "^7.0.2"
+  },
+  "lint-staged": {
+    "server.ts": "prettier --write",
+    "client/src/**/*.{ts,tsx,js,json,css,md}": "prettier --write"
   }
 }
