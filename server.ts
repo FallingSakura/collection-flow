@@ -216,6 +216,16 @@ app.get('/api/cover', async (req: Request, res: Response) => {
     'Content-Type',
     response.headers.get('content-type') || 'image/jpeg'
   );
+
+  // A cover URL is content-addressed (bfs/archive/<sha1>.jpg), so the same URL
+  // always refers to the same image. Both the browser and Vercel's edge can
+  // therefore hold it for a day; each miss costs a function invocation and a
+  // round trip to bilibili.
+  res.setHeader(
+    'Cache-Control',
+    'public, max-age=86400, s-maxage=86400, immutable'
+  );
+
   const buffer = await response.arrayBuffer();
   return res.send(Buffer.from(buffer));
 });
