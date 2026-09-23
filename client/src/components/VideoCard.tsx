@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MoreVertical, Trash2 } from 'lucide-react';
 import type { Video } from '../types';
+import { coverUrl } from '../lib/videoApi';
 
 interface Props {
   video: Video;
@@ -57,7 +58,7 @@ export default function VideoCard({ video, onDelete }: Props) {
       <div className="rounded-xl overflow-hidden backdrop-blur-md hover:bg-white/20 transition-colors">
         <div className="relative rounded-2xl overflow-hidden">
           <img
-            src={`/api/cover?url=${encodeURIComponent(video.cover)}`}
+            src={coverUrl(video.cover)}
             alt={video.title}
             className="w-full aspect-video object-cover"
           />

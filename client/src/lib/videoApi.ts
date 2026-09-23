@@ -13,6 +13,16 @@ function apiUrl(path: string): string {
 }
 
 /**
+ * Covers cannot be loaded from bilibili directly — the CDN checks the Referer
+ * and answers 403 to a browser on another origin — so the image element asks
+ * this app's backend to fetch them. That makes it an API call like any other,
+ * which is why its URL is built here instead of in the component.
+ */
+export function coverUrl(cover: string): string {
+  return apiUrl(`/api/cover?url=${encodeURIComponent(cover)}`);
+}
+
+/**
  * The two calls this app makes to its own backend, kept apart from the hook so
  * the request and response contract has one home. Nothing here touches React
  * or the cache: callers own the cookie and the bookkeeping around it.
