@@ -27,26 +27,28 @@ jobs:
           cache: pnpm
           cache-dependency-path: |
             pnpm-lock.yaml
+            server/pnpm-lock.yaml
             client/pnpm-lock.yaml
 
-      # The repo holds two pnpm projects: the root (server) and client/, which
-      # has a lockfile of its own, so both need installing.
+      # The repo holds three pnpm projects, each with a lockfile of its own:
+      # the root (repo tooling), server/ (the API) and client/ (the SPA).
       # HUSKY=0 skips the prepare script: git hooks are a local convenience.
       - name: Install
         run: |
           pnpm install --frozen-lockfile
+          pnpm -C server install --frozen-lockfile
           pnpm -C client install --frozen-lockfile
         env:
           HUSKY: 0
 
       - name: Check formatting
         run: |
-          pnpm run format:check
+          pnpm -C server run format:check
           pnpm -C client run format:check
 
       - name: Typecheck
         run: |
-          pnpm run typecheck
+          pnpm -C server run typecheck
           pnpm -C client run typecheck
 
       - name: Lint

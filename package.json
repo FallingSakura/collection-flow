@@ -1,42 +1,20 @@
 {
-  "name": "bilibili-watchlater",
-  "version": "1.0.0",
-  "main": "server.ts",
+  "name": "collection-flow",
+  "private": true,
   "packageManager": "pnpm@12.5.1",
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "start": "tsx server.ts",
-    "dev": "tsx watch server.ts",
-    "typecheck": "tsc --noEmit",
-    "format": "pnpm exec prettier --write server.ts",
-    "format:check": "pnpm exec prettier --check server.ts",
-    "prepare": "husky",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "type": "module",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "prepare": "husky"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.5.1",
-    "prettier": "^3.9.6",
-    "tsx": "^4.23.11",
-    "typescript": "^7.0.2"
+    "prettier": "^3.9.6"
   },
   "lint-staged": {
-    "server.ts": "prettier --write",
+    "server/**/*.ts": "prettier --write",
     "client/src/**/*.{ts,tsx,js,json,css,md}": "prettier --write"
   }
 }
