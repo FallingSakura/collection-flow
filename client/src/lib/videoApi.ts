@@ -1,6 +1,18 @@
 import type { Video } from '../types';
 
 /**
+ * The API is a separate deployment in production, so its address comes from the
+ * environment. It is left unset during development: requests stay relative to
+ * the page, and the Vite dev server proxies /api to localhost:3000 (see
+ * vite.config.ts).
+ */
+const API_BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
+
+function apiUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
+/**
  * The two calls this app makes to its own backend, kept apart from the hook so
  * the request and response contract has one home. Nothing here touches React
  * or the cache: callers own the cookie and the bookkeeping around it.
@@ -49,7 +61,7 @@ async function readJsonOrThrow(
 }
 
 export async function fetchVideos(cookie: string): Promise<Video[]> {
-  const res = await fetch('/api/videos', {
+  const res = await fetch(apiUrl('/api/videos'), {
     headers: {
       'x-bili-cookie': cookie,
     },
@@ -74,7 +86,7 @@ export async function deleteVideos(
   cookie: string,
   aids: number[]
 ): Promise<void> {
-  const res = await fetch('/api/videos/delete', {
+  const res = await fetch(apiUrl('/api/videos/delete'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
