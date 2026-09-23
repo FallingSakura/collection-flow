@@ -51,16 +51,25 @@ function originOf(value: string | undefined): string | undefined {
   }
 }
 
-// The configured frontend origin is always allowed; localhost on any port is
+// FRONTEND_URL is a comma-separated list so a production domain and preview
+// deployments (or several custom domains) can be allowed at the same time.
+// Entries are reduced to origins, which makes a trailing slash in the
+// environment variable harmless.
+const FRONTEND_ORIGINS = FRONTEND_URL.split(',')
+  .map(value => originOf(value.trim()))
+  .filter((value): value is string => value !== undefined);
+
+// The configured frontend origins are always allowed; localhost on any port is
 // allowed too, because Vite bumps the port (5174, ...) when 5173 is taken.
 // Any other origin is rejected, so a third-party site cannot embed or drive
 // this API from its own pages.
 function isAllowedOrigin(value: string | undefined): boolean {
-  if (!value) return false;
-  if (value === FRONTEND_URL) return true;
+  const origin = originOf(value);
+  if (!origin) return false;
+  if (FRONTEND_ORIGINS.includes(origin)) return true;
 
   try {
-    const { hostname } = new URL(value);
+    const { hostname } = new URL(origin);
     return hostname === 'localhost' || hostname === '127.0.0.1';
   } catch {
     return false;
@@ -83,7 +92,7 @@ app.use('/api', (req: Request, res: Response, next: NextFunction) => {
 });
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: FRONTEND_ORIGINS,
     credentials: true,
   })
 );
