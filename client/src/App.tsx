@@ -71,7 +71,6 @@ export default function App() {
       <Header
         reload={reload}
         shuffle={shuffle}
-        lastSuccessfulFetchedAt={lastSuccessfulFetchedAt}
         setShowSettings={setShowSettings}
       />
       <main className="max-w-4xl mx-auto">
@@ -148,6 +147,7 @@ export default function App() {
           settings={settings}
           onChange={handleSettingsChange}
           onClose={() => setShowSettings(false)}
+          lastSuccessfulFetchedAt={lastSuccessfulFetchedAt}
         />
       )}
     </div>

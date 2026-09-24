@@ -8,9 +8,24 @@ interface Props {
   settings: Settings;
   onChange: (settings: Settings) => void;
   onClose: () => void;
+  lastSuccessfulFetchedAt: number | null;
 }
 
-export default function SettingsPanel({ settings, onChange, onClose }: Props) {
+const options = {
+  year: 'numeric', // 'numeric' (2026) 或 '2-digit' (26)
+  month: 'short', // 'numeric' (9), '2-digit' (09), 'short' (9月/Sep), 'long' (九月/September)
+  day: '2-digit', // 'numeric' (24) 或 '2-digit' (24)
+  hour: '2-digit', // 'numeric' 或 '2-digit'
+  minute: '2-digit',
+  hour12: false, // false: 24小时制; true: 12小时制
+} as const;
+
+export default function SettingsPanel({
+  settings,
+  onChange,
+  onClose,
+  lastSuccessfulFetchedAt,
+}: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
@@ -18,7 +33,17 @@ export default function SettingsPanel({ settings, onChange, onClose }: Props) {
         onClick={onClose}
       />
       <div className="relative z-10 w-96 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-6 shadow-xl">
-        <h2 className="text-white font-semibold text-lg mb-6">Settings</h2>
+        <div className="mb-3">
+          <h2 className="text-white font-semibold text-xl">Settings</h2>
+          {lastSuccessfulFetchedAt && (
+            <p className="text-xs text-white/70">
+              {new Date(lastSuccessfulFetchedAt).toLocaleString(
+                'en-US',
+                options
+              )}
+            </p>
+          )}
+        </div>
 
         <div className="space-y-5">
           <div>
