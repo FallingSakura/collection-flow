@@ -9,7 +9,7 @@ interface Props {
 
 export default function Header({ reload, shuffle, setShowSettings }: Props) {
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md dark:bg-white/10 bg-black/5 border-b dark:border-white/10 border-gray-300 px-4 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-40 backdrop-blur-md dark:bg-white/10 bg-black/5  dark:border-white/10 px-4 py-3 flex items-center justify-between">
       <div>
         <h1 className="text-black dark:text-white font-display font-semibold text-lg">
           Collection Flow
