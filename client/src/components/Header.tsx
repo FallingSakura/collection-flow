@@ -25,14 +25,6 @@ export default function Header({ reload, shuffle, setShowSettings }: Props) {
             className="px-3 py-1.5 rounded-lg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white bg-black/5 hover:bg-black/10 text-black text-sm transition-colors"
           >
             <RefreshCw size="20" />
-            {/* {lastSuccessfulFetchedAt && (
-              <p className="text-xs dark:text-white/40 text-black/40">
-                {new Date(lastSuccessfulFetchedAt).toLocaleString(
-                  'en-US',
-                  options
-                )}
-              </p>
-            )} */}
           </button>
         </Tooltip>
         <Tooltip label="Shuffle order">
