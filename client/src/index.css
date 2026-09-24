@@ -1,5 +1,13 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/space-grotesk';
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Space Grotesk, self-hosted through @fontsource rather than Google Fonts:
+   the app is used from mainland China, where the Google Fonts CDN is
+   unreachable, and a title font is not worth a failed request. */
+@theme {
+  --font-display: 'Space Grotesk Variable', sans-serif;
+}
 
 /* Short horizontal shake, used by the fetch-error banner to draw attention.
    Replays on every remount (the banner is keyed by the failure counter). */
