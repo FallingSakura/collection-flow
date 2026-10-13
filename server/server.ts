@@ -217,12 +217,27 @@ app.get('/api/cover', async (req: Request, res: Response) => {
       .json({ error: 'only bilibili CDN (hdslb.com) urls are allowed' });
   }
 
-  const response = await fetch(url, {
-    headers: {
-      Referer: 'https://www.bilibili.com',
-      'User-Agent': 'Mozilla/5.0',
-    },
-  });
+  let response: globalThis.Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Referer: 'https://www.bilibili.com',
+        'User-Agent': 'Mozilla/5.0',
+      },
+    });
+  } catch (err) {
+    console.error('Failed to fetch cover:', err);
+    return res.status(502).json({ error: 'failed to reach bilibili CDN' });
+  }
+
+  // Checked before any cache header is set: the header below marks the
+  // response immutable for a day, and an upstream 403/404 sent with it would
+  // be held by the browser and Vercel's edge as if it were the image.
+  if (!response.ok) {
+    return res
+      .status(502)
+      .json({ error: `bilibili CDN responded ${response.status}` });
+  }
 
   res.setHeader(
     'Content-Type',
