@@ -4,8 +4,9 @@ import type { Video } from '../types';
 const FETCHED_AT_STORAGE_PREFIX = 'video-list-fetched-at:';
 
 // The three cache keys share a suffix: a hash of the cookie, not the cookie
-// itself. localStorage is readable by any script on this origin and visible in
-// devtools, and a bilibili cookie is a live login credential.
+// itself. The cookie is already stored once in plain text (App keeps it under
+// `bili-cookie` to send requests); hashing keeps it from being copied into
+// three more key names, but it does not make localStorage any safer.
 const VIDEOS_STORAGE_PREFIX = 'video-list:';
 
 // Only used for restoring order, not for displaying videos.
