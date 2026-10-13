@@ -38,6 +38,14 @@ const PAGE_SIZE = 10;
 // How long a cached list may be reused before an automatic refresh.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
+// How long after the last deletion the queued batch is sent. Each deletion
+// goes through a confirm dialog, so consecutive ones are usually more than a
+// second apart; at the earlier 800ms the batch was sent before the next
+// confirm and deletions were rarely merged. The cost of a longer window: a
+// tab closed inside it never sends the request, so the videos are gone from
+// the cache but not from the account, and return on the next fetch.
+const DELETE_BATCH_DELAY_MS = 2000;
+
 /**
  * State that remembers which cookie it belongs to.
  *
@@ -535,7 +543,7 @@ export function useVideos(cookie: string) {
 
     deleteTimerRef.current = setTimeout(() => {
       void flushPendingDeletes();
-    }, 2000);
+    }, DELETE_BATCH_DELAY_MS);
   }
 
   const clearDeleteError = useCallback(() => {
