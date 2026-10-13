@@ -27,6 +27,9 @@ interface BiliVideoItem {
   owner: BiliOwner;
 }
 
+// The response shape of GET /api/videos. client/src/types.ts declares the same
+// type; the two packages are deployed separately and share no code, so a
+// change here has to be copied there by hand.
 interface Video {
   aid: number;
   title: string;
