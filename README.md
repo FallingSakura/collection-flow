@@ -26,7 +26,9 @@
 
 ### 隐私
 
-Cookie 只存在你自己的浏览器里，每次请求通过 `x-bili-cookie` 头带给后端，后端仅用于当次转发给 B 站，不落库、不记录。项目没有数据库，服务端不保存任何账号信息；本地缓存的键是 Cookie 的哈希，不是 Cookie 本身。
+Cookie 只存在你自己的浏览器里，每次请求通过 `x-bili-cookie` 头带给后端，后端仅用于当次转发给 B 站，不落库、不记录。项目没有数据库，服务端不保存任何账号信息。
+
+需要知道的是：Cookie 以明文存在浏览器的 localStorage（键名 `bili-cookie`），本页面上运行的任何脚本和有权限的浏览器扩展都能读到它。列表缓存的键名用的是 Cookie 的哈希，只是为了不把 Cookie 再复制几份，并不能让它更安全。另外，后端在转发时必然能看到 Cookie——如果你不想信任别人部署的实例，请自己部署一份。
 
 ### 技术栈与结构
 
@@ -42,7 +44,7 @@ Cookie 只存在你自己的浏览器里，每次请求通过 `x-bili-cookie` �
 | `POST /api/videos/delete` | 按 aid 批量删除（B 站接口需要 Cookie 中的 `bili_jct` 作为 csrf） |
 | `GET /api/cover?url=` | 封面代理，只允许 `*.hdslb.com` 的地址 |
 
-所有 `/api` 请求必须来自允许的前端源（`FRONTEND_URL`，支持逗号分隔的多个源）或 localhost。
+后端只响应 `Origin` 或 `Referer` 属于允许前端源（`FRONTEND_URL`，支持逗号分隔的多个源）或 localhost 的请求。这能阻止其他网站在访客的浏览器里调用这个 API，但这两个请求头可以被 curl 之类的工具伪造，所以它不是身份认证。
 
 ### 本地开发
 
@@ -60,7 +62,7 @@ pnpm -C client dev   # 前端：http://localhost:5173，/api 自动代理到后�
 
 从同一个仓库创建两个项目：
 
-- **API** — Root Directory 设为 `server`，环境变量 `FRONTEND_URL` 填允许的前端源（可逗号分隔多个）。
+- **API** — Root Directory 设为 `server`，环境变量 `FRONTEND_URL` 填允许的前端源（可逗号分隔多个）。不需要 `vercel.json`：Vercel 会自动识别 `server.ts` 里的 Express 应用。
 - **前端** — Root Directory 设为 `client`，环境变量 `VITE_API_URL` 填 API 的地址。
 
 ### 说明
@@ -88,7 +90,9 @@ Two things come out of that. You slowly work through the backlog, and everything
 
 ### Privacy
 
-Your cookie lives in your browser only. Each request carries it in the `x-bili-cookie` header to this app's backend, which forwards it to bilibili for that request and nothing else — no logs, no storage. There is no database and no account information on the server side. The local cache is keyed by a hash of the cookie, not by the cookie itself.
+Your cookie lives in your browser only. Each request carries it in the `x-bili-cookie` header to this app's backend, which forwards it to bilibili for that request and nothing else — no logs, no storage. There is no database and no account information on the server side.
+
+Worth knowing: the cookie is stored in plain text in the browser's localStorage (key `bili-cookie`), where any script running on the page and any extension with access can read it. Cache entries are keyed by a hash of the cookie only to avoid copying it into more keys; that does not make it safer. The backend also necessarily sees the cookie while forwarding it — if you would rather not trust someone else's instance, deploy your own.
 
 ### Stack and layout
 
@@ -104,7 +108,7 @@ Your cookie lives in your browser only. Each request carries it in the `x-bili-c
 | `POST /api/videos/delete` | batch delete by aid (bilibili needs `bili_jct` from the cookie as csrf) |
 | `GET /api/cover?url=` | cover proxy, restricted to `*.hdslb.com` |
 
-Every `/api` request must come from an allowed frontend origin (`FRONTEND_URL`, a comma-separated list) or from localhost.
+The backend only answers requests whose `Origin` or `Referer` is an allowed frontend origin (`FRONTEND_URL`, a comma-separated list) or localhost. That stops other websites from driving the API from a visitor's browser, but tools like curl can forge both headers, so it is not authentication.
 
 ### Development
 
@@ -122,7 +126,7 @@ pnpm -C client dev   # SPA on http://localhost:5173, /api is proxied
 
 Two projects from this repository:
 
-- **API** — Root Directory `server`; set `FRONTEND_URL` to the allowed frontend origin(s), comma-separated.
+- **API** — Root Directory `server`; set `FRONTEND_URL` to the allowed frontend origin(s), comma-separated. No `vercel.json` is needed: Vercel detects the Express app in `server.ts`.
 - **Client** — Root Directory `client`; set `VITE_API_URL` to the deployed API.
 
 ### Notes
