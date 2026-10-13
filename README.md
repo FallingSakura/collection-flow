@@ -128,3 +128,9 @@ Two projects from this repository:
 ### Notes
 
 An unofficial personal project, not affiliated with bilibili. The cookie is a live account credential — only use it in an environment you trust. Deletions run with your account's permissions, so make sure before you confirm.
+
+---
+
+## License
+
+[MIT](LICENSE)

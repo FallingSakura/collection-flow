@@ -1,6 +1,7 @@
 {
   "name": "collection-flow",
   "private": true,
+  "license": "MIT",
   "packageManager": "pnpm@12.5.1",
   "engines": {
     "node": ">=22.13.0"
