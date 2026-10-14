@@ -52,7 +52,9 @@ jobs:
           pnpm -C client run typecheck
 
       - name: Lint
-        run: pnpm -C client run lint
+        run: |
+          pnpm -C server run lint
+          pnpm -C client run lint
 
       - name: Build
         run: pnpm -C client run build
