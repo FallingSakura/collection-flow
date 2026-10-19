@@ -13,6 +13,8 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
+    "test": "vitest",
+    "test:run": "vitest run",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,json,css,md}\""
@@ -39,6 +41,7 @@
     "prettier": "^3.9.6",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^5.0.4"
   }
 }
