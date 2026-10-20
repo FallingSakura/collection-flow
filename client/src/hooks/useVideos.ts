@@ -20,17 +20,12 @@ import {
 } from '../lib/videoOrder';
 
 /**
- * Per-cookie client-side cache for the "watch later" list.
+ * Per-cookie cache of the watch-later list: render from localStorage, fetch
+ * only when it is missing or older than CACHE_TTL_MS.
  *
- * The bilibili endpoint is slow and rate-limited, and the user's list changes
- * rarely, so the hook reads a cache first and refreshes only when it is missing
- * or stale. Since the data is fetched with the user's own cookie, everything is
- * partitioned by a hash of that cookie.
- *
- * The hard part is the asynchrony: the user can change their cookie while
- * requests for the previous one are still in flight. Rather than cancelling
- * those requests, every async result is tagged with the cookie it belongs to
- * and dropped if that cookie is no longer selected. See `OwnedState` below.
+ * The cookie can change while a request is in flight. Results are tagged with
+ * their cookie (OwnedState) and ignored once it is no longer selected, instead
+ * of being cancelled.
  */
 
 const PAGE_SIZE = 10;
@@ -38,23 +33,13 @@ const PAGE_SIZE = 10;
 // How long a cached list may be reused before an automatic refresh.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-// How long after the last deletion the queued batch is sent. Each deletion
-// goes through a confirm dialog, so consecutive ones are usually more than a
-// second apart; at the earlier 800ms the batch was sent before the next
-// confirm and deletions were rarely merged. The cost of a longer window: a
-// tab closed inside it never sends the request, so the videos are gone from
-// the cache but not from the account, and return on the next fetch.
+// Each deletion goes through a confirm dialog, so consecutive ones are often
+// more than a second apart; a shorter window rarely merges them. A tab closed
+// inside the window drops the request, and those videos return on next fetch.
 const DELETE_BATCH_DELAY_MS = 2000;
 
-/**
- * State that remembers which cookie it belongs to.
- *
- * A request started under cookie A can resolve after the user has switched to
- * cookie B. Every value is labelled with its `owner`; consumers use it only
- * while `owner` still matches the selected cookieKey, and otherwise fall back
- * to that cookie's cached data. This is what keeps one account's data from
- * showing up under another's.
- */
+// A value tagged with the cookie it belongs to. It is used only while `owner`
+// is the selected cookieKey, so one account's data does not show under another.
 type OwnedState<T> = {
   owner: string;
   value: T;
@@ -69,14 +54,8 @@ type FreshVideos = {
 export function useVideos(cookie: string) {
   const cookieKey = useMemo(() => getCookieKey(cookie), [cookie]);
 
-  // Read during render: the reads are synchronous and the memos re-run only
-  // when the cookie changes, so mirroring them into state would just add a
-  // second copy to keep in sync.
-  //
-  // They hold the cache as it stood when this cookie was selected, not a live
-  // view of it — a fetch or a delete that writes to localStorage afterwards
-  // leaves them behind. So they are the opening value and the fallback, while
-  // the state below is what stays current.
+  // Snapshots taken when this cookie was selected; later cache writes do not
+  // update them. They are the initial value and the fallback, not live data.
   const storedVideos = useMemo(() => readVideos(cookieKey), [cookieKey]);
 
   const storedOrderIds = useMemo(() => readOrder(cookieKey), [cookieKey]);
@@ -102,11 +81,8 @@ export function useVideos(cookie: string) {
   const [successfulFetchedAtState, setSuccessfulFetchedAtState] =
     useState<OwnedState<number> | null>(null);
 
-  // TanStack Query is used purely as a fetch primitive: `enabled: false` means
-  // every request is triggered explicitly (the user pressing reload, or the
-  // bootstrap below finding the cache unusable). Its own caching is left
-  // unused, because freshness policy already lives in this hook, and two
-  // caches disagreeing about what is fresh is worse than either one alone.
+  // Only used to run requests. This hook owns caching and freshness; a second
+  // cache could disagree about what is fresh.
   const { isFetching, refetch } = useQuery({
     queryKey: ['videos', cookieKey],
     queryFn: () => fetchVideos(cookie),
@@ -114,19 +90,14 @@ export function useVideos(cookie: string) {
     retry: false,
   });
 
-  // Held here rather than read from useQuery, which clears its error the
-  // instant a refetch starts — reading it directly makes the error banner
-  // vanish and reappear on every reload. This copy is written only when a
-  // request finishes, so it stays put while one is in flight.
+  // useQuery clears its error when a refetch starts, which made the banner
+  // flicker on reload. This copy changes only when a request finishes.
   const [lastFetchError, setLastFetchError] = useState<string | null>(null);
 
-  // Used as the banner's React key so its attention animation replays even
-  // when a new failure produces an identical message.
+  // The banner's key, so the shake replays even when the message repeats.
   const [errorEpoch, setErrorEpoch] = useState(0);
 
-  // The owner checks in the next four values are the consumer half of the
-  // OwnedState contract: state written for a previous cookie is treated as
-  // absent, so each cookie falls back to its own cached data.
+  // State written for a previous cookie counts as absent.
   const videos = useMemo(
     () =>
       videosState?.owner === cookieKey
@@ -145,9 +116,8 @@ export function useVideos(cookie: string) {
       ? successfulFetchedAtState.value
       : storedSuccessfulFetchedAt;
 
-  // Computed only when nothing is saved yet; the effect below persists it,
-  // which is what turns a deterministic-for-this-cookie order into a stable
-  // one across sessions.
+  // Only when no order is saved; the effect below saves it so it stays the
+  // same across visits.
   const initialPseudoOrderIds = useMemo(() => {
     if (!cookieKey || videos.length === 0 || activeOrderIds) {
       return null;
@@ -198,11 +168,8 @@ export function useVideos(cookie: string) {
     });
   }, []);
 
-  // Fetches, persists, and hands the same values back to the caller. The write
-  // is not an optional side effect — it is what lets the next visit start from
-  // cache — while the return value lets the caller put the result on screen
-  // now. A caller that no longer cares (stale cookie, unmounted component) can
-  // drop the return value without having wasted the write.
+  // Saves to the cache and also returns the result. A caller that is no
+  // longer current can drop the result; the next visit still gets the cache.
   const fetchFreshVideos =
     useCallback(async (): Promise<FreshVideos | null> => {
       if (!cookieKey) {
@@ -254,29 +221,17 @@ export function useVideos(cookie: string) {
       }
     }, [cookieKey, refetch]);
 
-  /**
-   * Why a ref and not just `cookieKey`:
-   *
-   * A callback closes over the values of the render that created it, so the
-   * `reload` created while cookie A was selected still sees A in its closure
-   * after the user pastes cookie B. By the time its `await` returns, it has no
-   * way to tell from its own variables that it is now late.
-   *
-   * A ref does not have that problem: this effect runs after every commit, so
-   * `currentCookieKeyRef.current` reflects the cookie selected at the time it
-   * is read. Comparing the two answers "is this result still wanted?" — the
-   * question `reload` has to ask before applying it.
-   */
+  // The cookie selected now. A callback's own `cookieKey` is the one from the
+  // render that created it, so after an await only this ref can tell whether
+  // the user has switched cookies.
   const currentCookieKeyRef = useRef(cookieKey);
 
   useEffect(() => {
     currentCookieKeyRef.current = cookieKey;
   }, [cookieKey]);
 
-  // A different cookie means different data; the old error text no longer
-  // applies. React's recommended "adjust state during render" pattern: this
-  // runs during the render pass itself, no effect and no cascading renders.
-  // If the new cookie also fails, the bootstrap fetch writes a fresh error.
+  // Drop the previous cookie's error. Adjusted during render rather than in
+  // an effect, which would cost an extra render.
   const [prevCookieKey, setPrevCookieKey] = useState(cookieKey);
 
   if (prevCookieKey !== cookieKey) {
@@ -291,16 +246,7 @@ export function useVideos(cookie: string) {
 
     if (!fresh) return;
 
-    /*
-     * Example: cookie A -> fetch -> cookie B -> fetch -> cookie A
-     *
-     * The first fetch for cookie A may return after the second fetch for cookie B.
-     * We don't want to apply the stale result of cookie A to the current state.
-     *
-     * The comparison is between the ref (what is selected now) and this
-     * closure's own cookieKey (what this request was for); they differ exactly
-     * when the user has changed cookies mid-flight.
-     */
+    // The user switched cookies while this request was in flight.
     if (currentCookieKeyRef.current !== cookieKey) {
       return;
     }
@@ -308,21 +254,12 @@ export function useVideos(cookie: string) {
     applyFreshVideos(cookieKey, fresh);
   }, [cookieKey, fetchFreshVideos, applyFreshVideos]);
 
-  /**
-   * In-flight requests keyed by cookie, so that concurrent triggers for the
-   * same cookie share one network call instead of racing each other. React
-   * StrictMode double-invokes effects in development, and this effect has
-   * several dependencies that can change together; without the map, opening
-   * the app with a cold cache would fire the same request twice. Entries are
-   * removed once settled.
-   */
+  // One in-flight request per cookie, shared by repeated effect runs
+  // (StrictMode runs effects twice in development).
   const bootstrapRequestsRef = useRef<Map<string, Promise<FreshVideos | null>>>(
     new Map()
   );
 
-  // Fetches only when the cache cannot be trusted: nothing stored, or stored
-  // longer than the TTL ago. A returning user inside the TTL window renders
-  // straight from localStorage.
   useEffect(() => {
     if (!cookieKey) {
       return;
@@ -358,10 +295,7 @@ export function useVideos(cookie: string) {
       });
     }
 
-    // The shared request can outlive this effect instance (unmount, or the
-    // cookie changing while it runs). The flag is per-instance, so a result
-    // arriving too late is dropped here rather than applied to state it no
-    // longer describes.
+    // The shared request can outlive this effect; a late result is dropped.
     let ignore = false;
 
     void request.then(fresh => {
@@ -383,8 +317,8 @@ export function useVideos(cookie: string) {
     applyFreshVideos,
   ]);
 
-  // Paging is by growing slice rather than by replacing the list, so already
-  // rendered cards keep their identity and their images stay loaded.
+  // Grows the slice instead of replacing the list, so rendered cards keep
+  // their loaded images.
   function loadMore() {
     if (!cookieKey) return;
 
@@ -426,23 +360,9 @@ export function useVideos(cookie: string) {
     });
   }
 
-  /**
-   * Deletions are optimistic and batched.
-   *
-   * Optimistic, because the card is gone from the user's point of view the
-   * moment they confirm — waiting for a round trip before hiding it makes the
-   * UI feel broken. The cost is that a failure must be undone, which is the
-   * restore path below.
-   *
-   * Batched, because deleting a few videos in a row is one intention, and one
-   * request per card would be slower and likelier to fail halfway, leaving the
-   * list and the account disagreeing about what still exists.
-   *
-   * The queue carries the credentials it was built under. A batch can outlive
-   * the cookie that created it (the debounce is short, but switching accounts
-   * is only a paste away), and sending those aids with a different account's
-   * cookie would target the wrong account.
-   */
+  // Deletions are optimistic (the card goes on confirm) and batched (one
+  // request for a run of deletions). A batch keeps the cookie it was queued
+  // under, so a cookie switch cannot send its aids to the wrong account.
   const pendingDeleteRef = useRef<{
     cookieKey: string;
     cookie: string;
@@ -457,9 +377,7 @@ export function useVideos(cookie: string) {
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // No `cookie` dependency: the batch supplies its own credentials, so the
-  // callback stays valid across a cookie switch instead of being rebuilt (and
-  // potentially outrun by) a newer render.
+  // No `cookie` dependency: the batch carries its own.
   const flushPendingDeletes = useCallback(async () => {
     const batch = pendingDeleteRef.current;
 
@@ -480,10 +398,7 @@ export function useVideos(cookie: string) {
         err instanceof Error ? err.message : '删除失败，视频已恢复'
       );
 
-      // Counterpart to the optimistic update: the server refused, so the
-      // videos go back into the batch's own cache bucket. This write is
-      // unconditional — the bucket holds the optimistic list, and a reload
-      // would read it back.
+      // Undo the optimistic delete in the batch's own cache bucket.
       const restored = [
         ...(readVideos(batch.cookieKey) ?? []),
         ...batch.videos,
@@ -491,15 +406,9 @@ export function useVideos(cookie: string) {
 
       saveVideos(batch.cookieKey, restored);
 
-      // The state slot is shared by every cookie, so writing
-      // { owner: batch.cookieKey } evicts whatever occupies it. Harmless
-      // while the occupant is not the cookie on screen, but if a fetch for
-      // the selected cookie landed after this batch was queued, the swap
-      // would drop its live list — the render would then fall back to
-      // storedVideos, a snapshot from the moment that cookie was selected
-      // and stale ever since. Skip only that case: this batch's cookie is
-      // already repaired on disk, and the memo re-reads it on the next
-      // switch.
+      // The state slot is shared by all cookies. Skip the write if it would
+      // evict the selected cookie's live list; this batch's cache is already
+      // fixed and is re-read on the next switch.
       setVideosState(prev => {
         const evictsSelected =
           prev !== null &&
@@ -516,17 +425,15 @@ export function useVideos(cookie: string) {
   function deleteVideo(video: Video) {
     if (!cookieKey) return;
 
-    // Removed from the visible list and from the cache together: a reload
-    // before the request settles should not bring the card back.
+    // Also removed from the cache, so a reload before the request settles
+    // does not bring the card back.
     const next = videos.filter(v => v.aid !== video.aid);
 
     saveVideos(cookieKey, next);
 
     setVideosState({ owner: cookieKey, value: next });
 
-    // A queued batch belongs to the cookie it was created under. Getting here
-    // with a different cookieKey means the account changed, so the old batch is
-    // sent with its own cookie before a new one starts.
+    // The account changed: send the old batch with its own cookie first.
     if (pendingDeleteRef.current.cookieKey !== cookieKey) {
       if (pendingDeleteRef.current.videos.length > 0) {
         void flushPendingDeletes();
@@ -537,8 +444,7 @@ export function useVideos(cookie: string) {
       pendingDeleteRef.current.videos.push(video);
     }
 
-    // Restarting the timer means one request goes out once the user stops
-    // clicking, rather than one per card.
+    // Restarted on each deletion, so one request goes out when they stop.
     if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
 
     deleteTimerRef.current = setTimeout(() => {
