@@ -1,22 +1,12 @@
 import type { Video } from '../types';
 
-// The timestamp is stored as a number (milliseconds since epoch) in localStorage, keyed by cookie hash.
+// Keys end in a hash of the cookie, so the cookie is not copied into them. It
+// does not make localStorage safer: App stores the cookie itself in plain text.
 const FETCHED_AT_STORAGE_PREFIX = 'video-list-fetched-at:';
-
-// The three cache keys share a suffix: a hash of the cookie, not the cookie
-// itself. The cookie is already stored once in plain text (App keeps it under
-// `bili-cookie` to send requests); hashing keeps it from being copied into
-// three more key names, but it does not make localStorage any safer.
 const VIDEOS_STORAGE_PREFIX = 'video-list:';
-
-// Only used for restoring order, not for displaying videos.
 const ORDER_STORAGE_PREFIX = 'video-order:';
 
-// FNV-1a, used to turn the cookie into a short opaque key. It is not a
-// cryptographic hash and offers no collision resistance worth relying on —
-// the point is only to avoid storing the credential itself and to keep the
-// key a manageable length. Buckets are few and long-lived, so a collision
-// would at worst mix two accounts' caches.
+/** FNV-1a. Not cryptographic: a collision would mix two accounts' caches. */
 export function hashString(value: string): number {
   let hash = 2166136261;
 
@@ -34,14 +24,9 @@ export function getCookieKey(cookie: string): string {
   return hashString(cookie).toString(36);
 }
 
-/**
- * The readers below return `null` instead of throwing, and `null` means the
- * same as "nothing stored". localStorage is shared with everything else on
- * this origin and may hold data written by an older version of this app, so
- * unreadable content is treated as "no cache" rather than as a crash. The
- * shape checks serve that end: a half-valid entry from a previous schema would
- * otherwise surface as a failure far from here.
- */
+// The readers return null for missing or malformed data (e.g. from an older
+// version), so a bad entry reads as "no cache" instead of crashing later.
+
 export function readVideos(cookieKey: string): Video[] | null {
   if (!cookieKey) return null;
 

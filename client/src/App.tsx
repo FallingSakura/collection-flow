@@ -40,9 +40,8 @@ export default function App() {
 
   const [toastVisible, setToastVisible] = useState(false);
 
-  // Fade the toast out on its own after 5s of no interaction; the actual
-  // error is only cleared once the fade-out transition has finished, so it
-  // can't pop back in mid-fade.
+  // Hide after 5s. The error is cleared only after the 300ms fade-out, so the
+  // toast does not vanish mid-fade.
   useEffect(() => {
     if (!deleteError) return;
 
@@ -79,7 +78,7 @@ export default function App() {
             open settings and paste your cookie to get started
           </div>
         ) : error && displayed.length === 0 ? (
-          // No cached data to fall back on, so the error gets the full page.
+          // Nothing cached to show, so the error takes the whole page.
           <div className="text-center py-20 space-y-3">
             <p className="text-red-400 text-sm">{error}</p>
             <button
@@ -92,10 +91,8 @@ export default function App() {
         ) : (
           <>
             {error && (
-              // A refresh failed but cached videos are still on screen;
-              // show the error as a banner instead of swapping the list out.
-              // key={errorEpoch} remounts the banner on every new failure so
-              // the shake animation replays even for a repeated message.
+              // Cached videos stay on screen. Keyed by errorEpoch so the shake
+              // replays on every failure.
               <div
                 key={errorEpoch}
                 className="animate-shake mt-4 flex items-center justify-between gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-400"

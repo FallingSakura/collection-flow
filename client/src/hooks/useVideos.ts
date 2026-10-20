@@ -19,18 +19,8 @@ import {
   randomOrderIds,
 } from '../lib/videoOrder';
 
-/**
- * Per-cookie cache of the watch-later list: render from localStorage, fetch
- * only when it is missing or older than CACHE_TTL_MS.
- *
- * The cookie can change while a request is in flight. Results are tagged with
- * their cookie (OwnedState) and ignored once it is no longer selected, instead
- * of being cancelled.
- */
-
 const PAGE_SIZE = 10;
 
-// How long a cached list may be reused before an automatic refresh.
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Each deletion goes through a confirm dialog, so consecutive ones are often
@@ -51,6 +41,11 @@ type FreshVideos = {
   fetchedAt: number;
 };
 
+/**
+ * Renders the watch-later list from a per-cookie cache and fetches only when
+ * the cache is missing or older than CACHE_TTL_MS. The cookie can change
+ * mid-request, so results are tagged with their cookie (OwnedState).
+ */
 export function useVideos(cookie: string) {
   const cookieKey = useMemo(() => getCookieKey(cookie), [cookie]);
 

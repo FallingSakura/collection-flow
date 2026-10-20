@@ -3,7 +3,7 @@ import { restoreOrder, pseudoRandomOrder } from './videoOrder';
 import type { Video } from '../types';
 import { hashString } from './videoCache';
 
-// restoreOrder only looks at bvid; the other fields just satisfy the type.
+// Ordering only reads bvid; the other fields satisfy the type.
 function video(bvid: string): Video {
   return {
     aid: 0,

@@ -27,11 +27,8 @@ export default function VideoCard({ video, onDelete }: Props) {
     e.stopPropagation();
   }
 
-  // Close the dropdown when clicking anywhere outside it. We can't rely on
-  // a "fixed inset-0" backdrop here — the card's own backdrop-blur-md
-  // creates a new containing block for its fixed-position descendants, so
-  // a fixed overlay placed inside it only ever covers the card itself, not
-  // the real viewport.
+  // Not a "fixed inset-0" backdrop: backdrop-blur makes the card the
+  // containing block for fixed children, so it would only cover the card.
   useEffect(() => {
     if (!menuOpen) return;
 

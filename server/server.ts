@@ -27,9 +27,7 @@ interface BiliVideoItem {
   owner: BiliOwner;
 }
 
-// The response shape of GET /api/videos. client/src/types.ts declares the same
-// type; the two packages are deployed separately and share no code, so a
-// change here has to be copied there by hand.
+// Copy of `Video` in client/src/types.ts; the packages share no code.
 interface Video {
   aid: number;
   title: string;
@@ -54,18 +52,13 @@ function originOf(value: string | undefined): string | undefined {
   }
 }
 
-// FRONTEND_URL is a comma-separated list so a production domain and preview
-// deployments (or several custom domains) can be allowed at the same time.
-// Entries are reduced to origins, which makes a trailing slash in the
-// environment variable harmless.
+// A list, so production, preview and custom domains can all be allowed.
+// Reduced to origins, so a trailing slash in the variable is harmless.
 const FRONTEND_ORIGINS = FRONTEND_URL.split(',')
   .map(value => originOf(value.trim()))
   .filter((value): value is string => value !== undefined);
 
-// The configured frontend origins are always allowed; localhost on any port is
-// allowed too, because Vite bumps the port (5174, ...) when 5173 is taken.
-// Any other origin is rejected, so a third-party site cannot embed or drive
-// this API from its own pages.
+// localhost on any port, because Vite moves off 5173 when it is taken.
 function isAllowedOrigin(value: string | undefined): boolean {
   const origin = originOf(value);
   if (!origin) return false;
@@ -79,10 +72,8 @@ function isAllowedOrigin(value: string | undefined): boolean {
   }
 }
 
-// Origin check for every /api request. Browsers omit the Origin header on
-// same-origin GET requests but always send Referer, so accepting either is
-// enough for the real frontend while non-browser clients (which send
-// neither) are rejected.
+// Browsers omit Origin on same-origin GETs but send Referer, so either counts.
+// Both can be forged: this stops other websites, not curl.
 app.use('/api', (req: Request, res: Response, next: NextFunction) => {
   if (
     isAllowedOrigin(req.headers.origin) ||
@@ -200,8 +191,7 @@ app.get('/api/cover', async (req: Request, res: Response) => {
   const url = req.query.url as string | undefined;
   if (!url) return res.status(400).json({ error: 'missing url' });
 
-  // Whitelist to bilibili's CDN. Without this check the endpoint is an
-  // open proxy that fetches whatever URL an attacker points it at.
+  // Without this the endpoint is an open proxy for any URL.
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -230,9 +220,7 @@ app.get('/api/cover', async (req: Request, res: Response) => {
     return res.status(502).json({ error: 'failed to reach bilibili CDN' });
   }
 
-  // Checked before any cache header is set: the header below marks the
-  // response immutable for a day, and an upstream 403/404 sent with it would
-  // be held by the browser and Vercel's edge as if it were the image.
+  // Before the cache header, or a 403/404 would be cached as the cover.
   if (!response.ok) {
     return res
       .status(502)
@@ -244,10 +232,8 @@ app.get('/api/cover', async (req: Request, res: Response) => {
     response.headers.get('content-type') || 'image/jpeg'
   );
 
-  // A cover URL is content-addressed (bfs/archive/<sha1>.jpg), so the same URL
-  // always refers to the same image. Both the browser and Vercel's edge can
-  // therefore hold it for a day; each miss costs a function invocation and a
-  // round trip to bilibili.
+  // Cover URLs are content-addressed (bfs/archive/<sha1>.jpg), so a cached
+  // copy does not go stale.
   res.setHeader(
     'Cache-Control',
     'public, max-age=86400, s-maxage=86400, immutable'

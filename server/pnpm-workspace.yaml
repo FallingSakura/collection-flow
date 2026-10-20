@@ -1,14 +1,4 @@
-# server is its own pnpm project with its own lockfile. This file marks the
-# project root, so pnpm does not walk up the directory tree looking for a
-# workspace to join.
-#
-# pnpm skips dependency install scripts unless they are approved here. tsx
-# depends on esbuild, which has a postinstall script that sets up its native
-# binary; without the approval install stops with ERR_PNPM_IGNORED_BUILDS and
-# `pnpm dev` never starts.
-#
-# There is deliberately no `packages:` key: listing packages would turn this
-# directory into a multi-package workspace and change how install and the
-# lockfile behave.
+# tsx needs esbuild's install script, and pnpm 12 reads allowBuilds only from
+# this file. No `packages:` key: this is not a multi-package workspace.
 allowBuilds:
   esbuild: true

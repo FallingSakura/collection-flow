@@ -1,15 +1,8 @@
 import type { Video } from '../types';
 
 /**
- * Two orderings exist, and the difference between them is the point:
- *
- * - `pseudoRandomOrder` is deterministic, seeded by the cookie, so the list
- *   looks shuffled but comes out identical on every visit. This is what the
- *   user sees before pressing shuffle.
- * - `randomOrderIds` is a real shuffle, used only when the user asks for one.
- *
- * Either way the result is persisted: an order recomputed on each load would
- * move cards around between visits.
+ * Looks shuffled but is the same for the same seed, so the default order does
+ * not change between visits. `randomOrderIds` is the real shuffle.
  */
 export function pseudoRandomOrder(
   videos: Video[],
@@ -32,9 +25,7 @@ export function pseudoRandomOrder(
   return decorated.map(item => item.video);
 }
 
-// Applies the saved order, then appends whatever it does not mention — videos
-// added to the account since, or returned by a fresh fetch. The appended ones
-// go in a deterministic order so a refresh does not reshuffle the tail.
+/** Saved order first, then new videos in a seeded, stable order. */
 export function restoreOrder(
   videos: Video[],
   orderIds: string[],

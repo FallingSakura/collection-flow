@@ -12,12 +12,12 @@ interface Props {
 }
 
 const options = {
-  year: 'numeric', // 'numeric' (2026) 或 '2-digit' (26)
-  month: 'short', // 'numeric' (9), '2-digit' (09), 'short' (9月/Sep), 'long' (九月/September)
-  day: '2-digit', // 'numeric' (24) 或 '2-digit' (24)
-  hour: '2-digit', // 'numeric' 或 '2-digit'
+  year: 'numeric',
+  month: 'short',
+  day: '2-digit',
+  hour: '2-digit',
   minute: '2-digit',
-  hour12: false, // false: 24小时制; true: 12小时制
+  hour12: false,
 } as const;
 
 export default function SettingsPanel({
